@@ -6,6 +6,12 @@ import { cn } from "@/utils/cn"
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  
+  // App-level state and methods to pass via outlet context
+  const contextValue = {
+    sidebarOpen,
+    setSidebarOpen
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -36,8 +42,8 @@ const Layout = () => {
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-          <main className="flex-1 overflow-auto p-6">
-            <Outlet />
+<main className="flex-1 overflow-auto p-6">
+            <Outlet context={contextValue} />
           </main>
         </div>
       </div>
