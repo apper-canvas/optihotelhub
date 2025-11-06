@@ -352,5 +352,3 @@ const analyticsService = {
 }
 
 export default analyticsService
-
-export default analyticsService

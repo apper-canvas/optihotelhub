@@ -278,5 +278,3 @@ const roomsService = {
 }
 
 export default roomsService
-
-export default roomsService
