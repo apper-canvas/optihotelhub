@@ -1,80 +1,387 @@
-import profilesData from "@/services/mockData/profiles.json"
+import { getApperClient } from '@/services/apperClient'
+import { toast } from 'react-toastify'
+import { useSelector } from 'react-redux'
 
 const profileService = {
   async getAll() {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return [...profilesData]
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        throw new Error('ApperClient not available')
+      }
+
+      const response = await apperClient.fetchRecords('profile_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "avatar_c"}},
+          {"field": {"Name": "department_c"}},
+          {"field": {"Name": "email_c"}},
+          {"field": {"Name": "emergency_contact_c"}},
+          {"field": {"Name": "first_name_c"}},
+          {"field": {"Name": "join_date_c"}},
+          {"field": {"Name": "last_name_c"}},
+          {"field": {"Name": "phone_c"}},
+          {"field": {"Name": "role_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "Tags"}}
+        ]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return []
+      }
+
+      return response.data?.map(profile => ({
+        ...profile,
+        // Map database fields to legacy field names for UI compatibility
+        firstName: profile.first_name_c,
+        lastName: profile.last_name_c,
+        email: profile.email_c,
+        phone: profile.phone_c,
+        role: profile.role_c,
+        department: profile.department_c,
+        joinDate: profile.join_date_c,
+        address: profile.address_c,
+        emergencyContact: profile.emergency_contact_c,
+        avatar: profile.avatar_c,
+        status: profile.status_c,
+        // Add computed permissions
+        permissions: this._getPermissionsByRole(profile.role_c)
+      })) || []
+    } catch (error) {
+      console.error("Error fetching profiles:", error.message)
+      toast.error("Failed to load profiles")
+      return []
+    }
   },
 
   async getById(id) {
-    await new Promise(resolve => setTimeout(resolve, 200))
-    const profile = profilesData.find(profile => profile.Id === id)
-    if (!profile) {
-      throw new Error(`Profile with ID ${id} not found`)
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        throw new Error('ApperClient not available')
+      }
+
+      const response = await apperClient.getRecordById('profile_c', id, {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "avatar_c"}},
+          {"field": {"Name": "department_c"}},
+          {"field": {"Name": "email_c"}},
+          {"field": {"Name": "emergency_contact_c"}},
+          {"field": {"Name": "first_name_c"}},
+          {"field": {"Name": "join_date_c"}},
+          {"field": {"Name": "last_name_c"}},
+          {"field": {"Name": "phone_c"}},
+          {"field": {"Name": "role_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "Tags"}}
+        ]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return null
+      }
+
+      const profile = response.data
+      return {
+        ...profile,
+        firstName: profile.first_name_c,
+        lastName: profile.last_name_c,
+        email: profile.email_c,
+        phone: profile.phone_c,
+        role: profile.role_c,
+        department: profile.department_c,
+        joinDate: profile.join_date_c,
+        address: profile.address_c,
+        emergencyContact: profile.emergency_contact_c,
+        avatar: profile.avatar_c,
+        status: profile.status_c,
+        permissions: this._getPermissionsByRole(profile.role_c)
+      }
+    } catch (error) {
+      console.error(`Error fetching profile ${id}:`, error.message)
+      toast.error("Failed to load profile")
+      return null
     }
-    return { ...profile }
   },
 
   async getCurrentProfile() {
-    // Mock current user - in real app would get from auth context
-    await new Promise(resolve => setTimeout(resolve, 200))
-    return { ...profilesData[0] } // Return admin user as current user
+    // In real implementation, would get from Redux user state or user context
+    // For now, return first profile as mock current user
+    try {
+      const profiles = await this.getAll()
+      return profiles.length > 0 ? profiles[0] : null
+    } catch (error) {
+      console.error("Error fetching current profile:", error.message)
+      return null
+    }
   },
 
   async getByRole(role) {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    return profilesData.filter(profile => profile.role === role).map(profile => ({ ...profile }))
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        throw new Error('ApperClient not available')
+      }
+
+      const response = await apperClient.fetchRecords('profile_c', {
+        fields: [
+          {"field": {"Name": "Name"}},
+          {"field": {"Name": "address_c"}},
+          {"field": {"Name": "avatar_c"}},
+          {"field": {"Name": "department_c"}},
+          {"field": {"Name": "email_c"}},
+          {"field": {"Name": "emergency_contact_c"}},
+          {"field": {"Name": "first_name_c"}},
+          {"field": {"Name": "join_date_c"}},
+          {"field": {"Name": "last_name_c"}},
+          {"field": {"Name": "phone_c"}},
+          {"field": {"Name": "role_c"}},
+          {"field": {"Name": "status_c"}},
+          {"field": {"Name": "Tags"}}
+        ],
+        where: [{
+          FieldName: "role_c",
+          Operator: "EqualTo",
+          Values: [role]
+        }]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return []
+      }
+
+      return response.data?.map(profile => ({
+        ...profile,
+        firstName: profile.first_name_c,
+        lastName: profile.last_name_c,
+        email: profile.email_c,
+        phone: profile.phone_c,
+        role: profile.role_c,
+        department: profile.department_c,
+        joinDate: profile.join_date_c,
+        address: profile.address_c,
+        emergencyContact: profile.emergency_contact_c,
+        avatar: profile.avatar_c,
+        status: profile.status_c,
+        permissions: this._getPermissionsByRole(profile.role_c)
+      })) || []
+    } catch (error) {
+      console.error(`Error fetching profiles by role ${role}:`, error.message)
+      toast.error("Failed to load profiles")
+      return []
+    }
   },
 
   async create(profileData) {
-    await new Promise(resolve => setTimeout(resolve, 500))
-    const newId = Math.max(...profilesData.map(profile => profile.Id)) + 1
-    const newProfile = { 
-      ...profileData, 
-      Id: newId,
-      joinDate: new Date().toISOString(),
-      status: "Active",
-      permissions: this._getPermissionsByRole(profileData.role)
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        throw new Error('ApperClient not available')
+      }
+
+      // Only include updateable fields
+      const createData = {
+        Name: profileData.Name || `${profileData.firstName || profileData.first_name_c} ${profileData.lastName || profileData.last_name_c}`,
+        first_name_c: profileData.first_name_c || profileData.firstName,
+        last_name_c: profileData.last_name_c || profileData.lastName,
+        email_c: profileData.email_c || profileData.email,
+        phone_c: profileData.phone_c || profileData.phone,
+        role_c: profileData.role_c || profileData.role,
+        department_c: profileData.department_c || profileData.department,
+        join_date_c: profileData.join_date_c || profileData.joinDate || new Date().toISOString(),
+        address_c: profileData.address_c || profileData.address,
+        emergency_contact_c: profileData.emergency_contact_c || profileData.emergencyContact,
+        avatar_c: profileData.avatar_c || profileData.avatar,
+        status_c: profileData.status_c || profileData.status || "Active",
+        Tags: profileData.Tags || ""
+      }
+
+      const response = await apperClient.createRecord('profile_c', {
+        records: [createData]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to create ${failed.length} records: ${JSON.stringify(failed)}`)
+          failed.forEach(record => {
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        if (successful.length > 0) {
+          const profile = successful[0].data
+          return {
+            ...profile,
+            firstName: profile.first_name_c,
+            lastName: profile.last_name_c,
+            email: profile.email_c,
+            phone: profile.phone_c,
+            role: profile.role_c,
+            department: profile.department_c,
+            joinDate: profile.join_date_c,
+            address: profile.address_c,
+            emergencyContact: profile.emergency_contact_c,
+            avatar: profile.avatar_c,
+            status: profile.status_c,
+            permissions: this._getPermissionsByRole(profile.role_c)
+          }
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error("Error creating profile:", error.message)
+      toast.error("Failed to create profile")
+      return null
     }
-    profilesData.push(newProfile)
-    return { ...newProfile }
   },
 
   async update(id, profileData) {
-    await new Promise(resolve => setTimeout(resolve, 400))
-    const index = profilesData.findIndex(profile => profile.Id === id)
-    if (index === -1) {
-      throw new Error(`Profile with ID ${id} not found`)
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        throw new Error('ApperClient not available')
+      }
+
+      // Only include updateable fields
+      const updateData = {
+        Id: id,
+        ...(profileData.Name !== undefined && { Name: profileData.Name }),
+        ...(profileData.firstName !== undefined && { first_name_c: profileData.firstName }),
+        ...(profileData.first_name_c !== undefined && { first_name_c: profileData.first_name_c }),
+        ...(profileData.lastName !== undefined && { last_name_c: profileData.lastName }),
+        ...(profileData.last_name_c !== undefined && { last_name_c: profileData.last_name_c }),
+        ...(profileData.email !== undefined && { email_c: profileData.email }),
+        ...(profileData.email_c !== undefined && { email_c: profileData.email_c }),
+        ...(profileData.phone !== undefined && { phone_c: profileData.phone }),
+        ...(profileData.phone_c !== undefined && { phone_c: profileData.phone_c }),
+        ...(profileData.role !== undefined && { role_c: profileData.role }),
+        ...(profileData.role_c !== undefined && { role_c: profileData.role_c }),
+        ...(profileData.department !== undefined && { department_c: profileData.department }),
+        ...(profileData.department_c !== undefined && { department_c: profileData.department_c }),
+        ...(profileData.joinDate !== undefined && { join_date_c: profileData.joinDate }),
+        ...(profileData.join_date_c !== undefined && { join_date_c: profileData.join_date_c }),
+        ...(profileData.address !== undefined && { address_c: profileData.address }),
+        ...(profileData.address_c !== undefined && { address_c: profileData.address_c }),
+        ...(profileData.emergencyContact !== undefined && { emergency_contact_c: profileData.emergencyContact }),
+        ...(profileData.emergency_contact_c !== undefined && { emergency_contact_c: profileData.emergency_contact_c }),
+        ...(profileData.avatar !== undefined && { avatar_c: profileData.avatar }),
+        ...(profileData.avatar_c !== undefined && { avatar_c: profileData.avatar_c }),
+        ...(profileData.status !== undefined && { status_c: profileData.status }),
+        ...(profileData.status_c !== undefined && { status_c: profileData.status_c }),
+        ...(profileData.Tags !== undefined && { Tags: profileData.Tags })
+      }
+
+      const response = await apperClient.updateRecord('profile_c', {
+        records: [updateData]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return null
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to update ${failed.length} records: ${JSON.stringify(failed)}`)
+          failed.forEach(record => {
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        if (successful.length > 0) {
+          const profile = successful[0].data
+          return {
+            ...profile,
+            firstName: profile.first_name_c,
+            lastName: profile.last_name_c,
+            email: profile.email_c,
+            phone: profile.phone_c,
+            role: profile.role_c,
+            department: profile.department_c,
+            joinDate: profile.join_date_c,
+            address: profile.address_c,
+            emergencyContact: profile.emergency_contact_c,
+            avatar: profile.avatar_c,
+            status: profile.status_c,
+            permissions: this._getPermissionsByRole(profile.role_c)
+          }
+        }
+      }
+
+      return null
+    } catch (error) {
+      console.error("Error updating profile:", error.message)
+      toast.error("Failed to update profile")
+      return null
     }
-    
-    // Update permissions if role changed
-    const updatedData = { ...profileData }
-    if (updatedData.role) {
-      updatedData.permissions = this._getPermissionsByRole(updatedData.role)
-    }
-    
-    profilesData[index] = { ...profilesData[index], ...updatedData, Id: id }
-    return { ...profilesData[index] }
   },
 
   async delete(id) {
-    await new Promise(resolve => setTimeout(resolve, 300))
-    const index = profilesData.findIndex(profile => profile.Id === id)
-    if (index === -1) {
-      throw new Error(`Profile with ID ${id} not found`)
+    try {
+      const apperClient = getApperClient()
+      if (!apperClient) {
+        throw new Error('ApperClient not available')
+      }
+
+      const response = await apperClient.deleteRecord('profile_c', {
+        RecordIds: [id]
+      })
+
+      if (!response.success) {
+        console.error(response.message)
+        toast.error(response.message)
+        return false
+      }
+
+      if (response.results) {
+        const successful = response.results.filter(r => r.success)
+        const failed = response.results.filter(r => !r.success)
+        
+        if (failed.length > 0) {
+          console.error(`Failed to delete ${failed.length} records: ${JSON.stringify(failed)}`)
+          failed.forEach(record => {
+            if (record.message) toast.error(record.message)
+          })
+        }
+        
+        return successful.length > 0
+      }
+
+      return true
+    } catch (error) {
+      console.error("Error deleting profile:", error.message)
+      toast.error("Failed to delete profile")
+      return false
     }
-    profilesData.splice(index, 1)
-    return true
   },
 
   async updatePassword(id, oldPassword, newPassword) {
+    // Mock implementation - password management would typically be handled by authentication service
     await new Promise(resolve => setTimeout(resolve, 400))
-    // Mock password update - in real app would validate old password
-    const profile = profilesData.find(p => p.Id === id)
-    if (!profile) {
-      throw new Error(`Profile with ID ${id} not found`)
-    }
-    // In real app, would hash and store password
     return true
   },
 
@@ -97,5 +404,7 @@ const profileService = {
     return this._getPermissionsByRole(role)
   }
 }
+
+export default profileService
 
 export default profileService
